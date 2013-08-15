@@ -22,7 +22,11 @@ int main(int argc, char *argv[])
     register_builtin_importers_exporters();
 
 #ifdef SPROXEL_USE_PYTHON
+#ifndef _WIN32
+    init_script(argc>=1 ? argv[0] : "sproxel");
+#else
     init_script(argc>=1 ? argv[0] : "sproxel.exe");
+#endif
 #endif
 
     MainWindow window(filename);
@@ -33,7 +37,6 @@ int main(int argc, char *argv[])
     script_set_main_window(&window);
     scan_plugins();
     register_plugins();
-    run_script("startup.py");
     //get_python_console_widget()->toggleViewAction()->setChecked(true);
 #endif
 

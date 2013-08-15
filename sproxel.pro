@@ -14,6 +14,10 @@ TEMPLATE = app
 
 unix:!macx {
   INCLUDEPATH += Imath
+  CONFIG += link_pkgconfig
+  PKGCONFIG += glu python2
+  QMAKE_CXXFLAGS += -std=c++0x
+  DEFINES += SPROXEL_USE_PYTHON
 }
 
 macx {
@@ -75,7 +79,6 @@ HEADERS  += \
     pyConsole.h \
     pyBindings.h \
     ConsoleWidget.h \
-    glue/classGlue.h \
     Imath/ImathVecAlgo.h \
     Imath/ImathVec.h \
     Imath/ImathSphere.h \

@@ -98,6 +98,9 @@ def load_project(filename):
 
 def init_plugin_pathes():
   sproxel.plugin_pathes=[os.path.abspath(p) for p in sproxel.plugin_pathes]
+  if os.name == 'posix':
+    sproxel.plugin_pathes.append('/usr/share/sproxel/plugins')
+    sproxel.plugin_pathes.append('/usr/local/share/sproxel/plugins')
   sys.path=sproxel.plugin_pathes+sys.path
 
 
@@ -120,16 +123,17 @@ def scan_plugins():
   sproxel.plugins=dict()
   for path in sproxel.plugin_pathes:
     #print 'scanning', path
-    for name in os.listdir(path):
-      fn=os.path.join(path, name)
-      if os.path.isdir(fn):
-        fn=os.path.join(fn, '__init__.py')
-        if os.path.isfile(fn):
-          scan_plugin_module(name, fn)
-      else:
-        modname, ext = os.path.splitext(name)
-        if ext.lower()=='.py':
-          scan_plugin_module(modname, fn)
+    if os.path.exists(path):
+      for name in os.listdir(path):
+        fn=os.path.join(path, name)
+        if os.path.isdir(fn):
+          fn=os.path.join(fn, '__init__.py')
+          if os.path.isfile(fn):
+            scan_plugin_module(name, fn)
+        else:
+          modname, ext = os.path.splitext(name)
+          if ext.lower()=='.py':
+            scan_plugin_module(modname, fn)
 
 
 

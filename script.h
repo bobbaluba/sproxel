@@ -22,13 +22,6 @@ void unregister_plugins();
 bool run_script(const class QString &filename);
 
 
-#define GLUE(a, b) a##b
-#define TOPYT(cls) PyObject * GLUE(cls, _toPy ) (class cls *);
-#define TOCPP(cls) class cls* GLUE(cls, _toCpp) (PyObject *);
-#include "glue/classGlue.h"
-#undef GLUE
-
-
 extern class QDir exe_dir;
 
 extern PyObject *py_save_project, *py_load_project;

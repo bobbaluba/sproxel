@@ -14,7 +14,7 @@
 
 PyObject* qstr_to_py(const QString &str)
 {
-  return PyUnicode_FromUnicode((const Py_UNICODE*)str.constData(), str.length());
+  return PyUnicode_FromString(str.toStdString().c_str());
 }
 
 

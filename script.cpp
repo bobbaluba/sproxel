@@ -12,52 +12,13 @@
 extern void init_sproxel_bindings();
 
 
-#define GLUE(a, b) a##b
-
-
 //ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ//
 
 
 QDir exe_dir;
 
-static PyObject *glue=NULL;
-
 PyObject *py_save_project=NULL, *py_load_project=NULL, *py_init_plugin_pathes=NULL,
   *py_scan_plugins=NULL, *py_register_plugins=NULL, *py_unregister_plugins=NULL;
-
-
-//ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ//
-
-
-#define TOPYT(cls) \
-  static PyObject * GLUE(cls, _toPy_py) = NULL; \
-  PyObject * GLUE(cls, _toPy) (class cls *p) \
-  { \
-    if (!p) { Py_RETURN_NONE; } \
-    if (!GLUE(cls, _toPy_py)) { PyErr_SetString(PyExc_StandardError, "No " #cls "_toPy in SproxelGlue"); return NULL; } \
-    PyObject *c=PyCapsule_New(p, NULL, NULL); if (!c) return NULL; \
-    PyObject *w=PyObject_CallFunctionObjArgs(GLUE(cls, _toPy_py), c, NULL); \
-    Py_DECREF(c); \
-    return w; \
-  }
-
-
-#define TOCPP(cls) \
-  static PyObject * GLUE(cls, _toCpp_py) = NULL; \
-  class cls * GLUE(cls, _toCpp) (PyObject *w) \
-  { \
-    if (!w) { PyErr_SetString(PyExc_StandardError, "NULL PyObject in " #cls "_toCpp"); return NULL; } \
-    if (w==Py_None) return NULL; \
-    if (!GLUE(cls, _toCpp_py)) { PyErr_SetString(PyExc_StandardError, "No " #cls "_toCpp in SproxelGlue"); return NULL; } \
-    PyObject *c=PyObject_CallFunctionObjArgs(GLUE(cls, _toCpp_py), w, NULL); if (!c) return NULL; \
-    void *p=PyCapsule_GetPointer(c, NULL); \
-    Py_DECREF(c); \
-    return (class cls*)p; \
-  }
-
-
-#include "glue/classGlue.h"
-
 
 //ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ//
 
@@ -79,41 +40,10 @@ void init_script(const char *exe_path)
   pycon("exe path: %s", exe_path);
   pycon("exe dir: %s", exe_dir.absolutePath().toLocal8Bit().data());
 
-  #ifndef _WIN32
-    QString code="import sys\nsys.path.insert(0, \"";
-    code.append(exe_dir.absolutePath());
-    code.append("\")\nprint 'sys.path:', sys.path\n");
-    PyRun_SimpleString(code.toLocal8Bit().data());
-  #endif
-
-  pycon("Importing PySide.SproxelGlue...");
-  glue=PyImport_ImportModule("PySide.SproxelGlue");
-  if (!glue)
-  {
-    pycon("Failed to import PySide.SproxelGlue");
-    #ifdef _WIN32
-      QMessageBox::critical(NULL, "Sproxel Error", "Failed to import PySide.SproxelGlue");
-    #endif
-  }
-  else
-  {
-    pycon("Imported PySide.SproxelGlue, getting methods...");
-
-    bool gotErrors=false;
-
-    #define TOPYT(cls) \
-      GLUE(cls, _toPy_py ) = PyObject_GetAttrString(glue, #cls "_toPy" ); \
-      if (PyErr_Occurred()) { PyErr_Print(); gotErrors=true; }
-
-    #define TOCPP(cls) \
-      GLUE(cls, _toCpp_py) = PyObject_GetAttrString(glue, #cls "_toCpp"); \
-      if (PyErr_Occurred()) { PyErr_Print(); gotErrors=true; }
-
-    #include "glue/classGlue.h"
-
-    pycon("Glue methods: %s", gotErrors ? "some missing" : "all OK");
-    if (gotErrors) QMessageBox::critical(NULL, "Sproxel Error", "Some PySide.SproxelGlue methods are missing.");
-  }
+  QString code="import sys\nsys.path.insert(0, \"";
+  code.append(exe_dir.absolutePath());
+  code.append("\")\nprint 'sys.path:', sys.path\n");
+  PyRun_SimpleString(code.toLocal8Bit().data());
 
   PyObject *mod=PyImport_ImportModule("sproxel_utils");
   if (!mod)
@@ -163,12 +93,6 @@ void close_script()
   Py_XDECREF(py_save_project); py_save_project=NULL;
   Py_XDECREF(py_load_project); py_load_project=NULL;
 
-  #define TOPYT(cls) Py_XDECREF(GLUE(cls, _toPy_py )); GLUE(cls, _toPy_py ) = NULL;
-  #define TOCPP(cls) Py_XDECREF(GLUE(cls, _toCpp_py)); GLUE(cls, _toCpp_py) = NULL;
-  #include "glue/classGlue.h"
-
-  Py_XDECREF(glue); glue=NULL;
-
   qDebug() << "fin py...";
   Py_Finalize();
   qDebug() << "fin py ok";
@@ -186,8 +110,7 @@ void script_set_main_window(MainWindow *mwin)
   PyObject *o;
   bool gotErrors=false;
 
-  o=QMainWindow_toPy(mwin);
-  if (!o) { gotErrors=true; PyErr_Print(); o=Py_None; Py_INCREF(o); }
+  o = Py_None; Py_INCREF(o);
   PyModule_AddObject(mod, "main_window", o);
 
   o=PyList_New(1);
